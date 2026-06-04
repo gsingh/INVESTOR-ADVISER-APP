@@ -1,0 +1,76 @@
+# generated: 2026-06-03
+# last_updated: 2026-06-04
+# 4-2-transaction-logging created from epics — ready-for-dev
+# 4-1-xirr-engine-pure-function code review completed — 3 patches applied, set to done
+# story: 1-1-project-scaffold-docker-setup-authentication set to done
+# project: Investor-adviser-app
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: /Users/gurmeetsingh/Documents/Investor-adviser-app/_bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog -> in-progress: Automatically when first story is created (via create-story)
+#   - in-progress -> done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+
+generated: 2026-06-03
+last_updated: 2026-06-04
+# 4-3-holdings-dashboard-data-export-import done (ready for review)
+# 4-2-transaction-logging ready-for-dev
+# 4-1-xirr-engine-pure-function: code review patches applied
+# 3-1-category-browser-fund-filtering set to done after code review patches
+# 3-4-fund-detail-view-overlap-indicator code review completed — 21 patches applied, set to done
+project: Investor-adviser-app
+project_key: NOKEY
+tracking_system: file-system
+story_location: /Users/gurmeetsingh/Documents/Investor-adviser-app/_bmad-output/implementation-artifacts
+
+development_status:
+  epic-1: in-progress
+  1-1-project-scaffold-docker-setup-authentication: done
+  1-2-navigation-shell-layout: done
+  1-3-centralized-term-explanation-system: done
+  1-4-investor-risk-profiling: done
+  epic-1-retrospective: optional
+
+  epic-2: in-progress
+  2-1-goal-crud: done
+  2-2-goal-to-category-mapping-sip-calculator: done
+  2-3-goal-detail-allocation-drift-tracking: done
+  epic-2-retrospective: optional
+
+  epic-3: in-progress
+  3-1-category-browser-fund-filtering: done
+  3-2-custom-scoring-engine-pure-function: done
+  3-3-scorecard-ui-weight-configuration: done
+  3-4-fund-detail-view-overlap-indicator: done
+  epic-3-retrospective: optional
+
+  epic-4: in-progress
+  4-1-xirr-engine-pure-function: done
+  4-2-transaction-logging: done
+  4-3-holdings-dashboard-data-export-import: done
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-review-schedule-reminder-system: backlog
+  5-2-review-checklist-flow: backlog
+  5-3-investment-journal: backlog
+  epic-5-retrospective: optional
