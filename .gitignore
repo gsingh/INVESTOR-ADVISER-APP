@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+nginx/.htpasswd
+*.local
+
+# BMad AI-assisted development artifacts
+_bmad/
+_bmad-output/
+.agents/
+.opencode/
