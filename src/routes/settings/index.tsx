@@ -1,13 +1,15 @@
 import { useRef } from 'react'
-import { Settings, Download, Upload } from 'lucide-react'
+import { Download, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
 import { useDataExport } from '@/features/settings/hooks/useDataExport'
+import { useReviewSettings } from '@/features/settings/hooks/useReviewSettings'
 
 export default function SettingsPage() {
   const { addToast } = useToast()
   const { exportData, importData } = useDataExport()
+  const { frequency, nextReviewDate, setFrequency, loading: settingsLoading } = useReviewSettings()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   async function handleExport() {
@@ -41,6 +43,42 @@ export default function SettingsPage() {
         <h2 className="text-display font-semibold text-foreground">Settings</h2>
         <p className="text-body text-muted-foreground">App configuration and data management.</p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-body font-semibold">Review Schedule</CardTitle>
+          <CardDescription className="text-label text-muted-foreground">
+            Set how often you want to review your portfolio.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-3">
+            <Button
+              variant={frequency === 'monthly' ? 'default' : 'outline'}
+              onClick={() => setFrequency('monthly').catch(() => addToast({ title: 'Failed to save review frequency', variant: 'destructive' }))}
+              disabled={settingsLoading}
+            >
+              Monthly
+            </Button>
+            <Button
+              variant={frequency === 'quarterly' ? 'default' : 'outline'}
+              onClick={() => setFrequency('quarterly').catch(() => addToast({ title: 'Failed to save review frequency', variant: 'destructive' }))}
+              disabled={settingsLoading}
+            >
+              Quarterly
+            </Button>
+          </div>
+          {nextReviewDate ? (
+            <p className="mt-3 text-body text-muted-foreground">
+              Next review: {new Date(nextReviewDate).toLocaleDateString('en-IN')}
+            </p>
+          ) : (
+            <p className="mt-3 text-body text-muted-foreground">
+              Choose a frequency to get started.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

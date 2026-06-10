@@ -1,7 +1,9 @@
 import { z } from 'zod'
+import { estimateRiskLabel, estimateExpenseRatio, estimateAum, estimateBenchmark, extractCategoryFromName } from '@/lib/fund-enrichment'
+import { extractPlan, extractOption, extractAmc } from './mf-utils'
 
 export const mfFundSchema = z.object({
-  schemeCode: z.string().or(z.number()).transform(String),
+  schemeCode: z.number().or(z.string()).transform(String),
   schemeName: z.string(),
   amc: z.string().optional().default(''),
   category: z.string().optional().default(''),
@@ -20,27 +22,31 @@ export const mfFundListSchema = z.array(mfFundSchema)
 
 export const mfapiResponseSchema = z.unknown().transform((raw): MFFund[] => {
   if (!Array.isArray(raw)) return []
-  return raw.map(item => {
-    if (typeof item !== 'object' || item === null) return null
+  const len = raw.length
+  const result: MFFund[] = new Array(len)
+  for (let i = 0; i < len; i++) {
+    const item = raw[i]
+    if (typeof item !== 'object' || item === null) continue
     const obj = item as Record<string, unknown>
-    const safeNumber = (v: unknown, fallback = 0): number => {
-      const n = Number(v)
-      return Number.isFinite(n) ? n : fallback
+    const schemeCode = typeof obj.schemeCode === 'number' ? String(obj.schemeCode) : String(obj.schemeCode ?? '')
+    const schemeName = String(obj.schemeName ?? '')
+    const plan = extractPlan(schemeName)
+    const category = extractCategoryFromName(schemeName)
+    result[i] = {
+      schemeCode,
+      schemeName,
+      amc: extractAmc(schemeName),
+      category,
+      subCategory: category,
+      plan,
+      option: extractOption(schemeName),
+      benchmark: estimateBenchmark(category),
+      expenseRatio: estimateExpenseRatio(category, plan),
+      aum: estimateAum(category),
+      riskLabel: estimateRiskLabel(category),
     }
-    return mfFundSchema.parse({
-      schemeCode: obj.scheme_code ?? obj.schemeCode ?? '',
-      schemeName: obj.scheme_name ?? obj.schemeName ?? '',
-      amc: obj.amc ?? '',
-      category: obj.category ?? obj.super_category ?? '',
-      subCategory: obj.sub_category ?? obj.subCategory ?? '',
-      plan: obj.plan ?? '',
-      option: obj.option ?? '',
-      benchmark: obj.benchmark ?? '',
-      expenseRatio: safeNumber(obj.expense_ratio ?? obj.expenseRatio ?? 0),
-      aum: safeNumber(obj.aum ?? 0),
-      riskLabel: obj.risk_label ?? obj.riskLabel ?? '',
-    })
-  }).filter((f): f is MFFund => f !== null)
+  }
+  return result.filter(Boolean)
 })
 
 export const navEntrySchema = z.object({
@@ -50,11 +56,22 @@ export const navEntrySchema = z.object({
 
 export type NavEntry = z.infer<typeof navEntrySchema>
 
+function parseDate(dateStr: string): Date | null {
+  const ddmmyyyy = /^(\d{2})-(\d{2})-(\d{4})$/
+  const match = dateStr.match(ddmmyyyy)
+  if (match) {
+    const [, d, m, y] = match
+    return new Date(Number(y), Number(m) - 1, Number(d))
+  }
+  const t = new Date(dateStr).getTime()
+  return Number.isFinite(t) ? new Date(t) : null
+}
+
 export const navHistoryResponseSchema = z.unknown().transform((raw): NavEntry[] => {
   if (typeof raw !== 'object' || raw === null) return []
   const obj = raw as Record<string, unknown>
-  if (!Array.isArray(obj.data)) return []
-  return obj.data
+  const dataArr = Array.isArray(obj.data) ? obj.data : []
+  return dataArr
     .map(item => {
       if (typeof item !== 'object' || item === null) return null
       const d = item as Record<string, unknown>
@@ -66,10 +83,15 @@ export const navHistoryResponseSchema = z.unknown().transform((raw): NavEntry[] 
     })
     .filter((e): e is NavEntry => {
       if (e === null || e.date === '') return false
-      const t = new Date(e.date).getTime()
-      return Number.isFinite(t)
+      const d = parseDate(e.date)
+      return d !== null
     })
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .sort((a, b) => {
+      const da = parseDate(a.date)
+      const db = parseDate(b.date)
+      if (!da || !db) return 0
+      return da.getTime() - db.getTime()
+    })
 })
 
 export const portfolioHoldingSchema = z.object({
@@ -118,52 +140,75 @@ export const schemeDetailSchema = z.object({
   portfolioHoldings: z.array(portfolioHoldingSchema).optional().default([]),
   sectorAllocation: z.array(sectorAllocationSchema).optional().default([]),
   rollingReturns: z.array(rollingReturnSchema).optional().default([]),
+  launchDate: z.string().optional(),
 })
 
 export type SchemeDetail = z.infer<typeof schemeDetailSchema>
 
+function parseCategory(categoryStr: string): { category: string; subCategory: string } {
+  const parts = categoryStr.split(' - ')
+  if (parts.length >= 2) {
+    return { category: parts[0].trim(), subCategory: parts.slice(1).join(' - ').trim() }
+  }
+  return { category: categoryStr, subCategory: categoryStr }
+}
+
+const mfdataWrapperSchema = <T extends z.ZodTypeAny>(data: T) =>
+  z.object({ status: z.string(), data })
+
+const mfdataSchemeSchema = z.object({
+  amfi_code: z.string(),
+  name: z.string(),
+  family_id: z.number().optional(),
+  nav: z.number().optional(),
+  nav_date: z.string().optional(),
+  expense_ratio: z.number().optional(),
+  morningstar: z.number().optional(),
+})
+
+export const mfdataSchemeResponseSchema = mfdataWrapperSchema(mfdataSchemeSchema)
+
+const mfdataSectorEntrySchema = z.object({
+  sector: z.string(),
+  weight_pct: z.number(),
+})
+
+const mfdataSectorsDataSchema = z.object({
+  sectors: z.array(mfdataSectorEntrySchema).optional().default([]),
+  family_id: z.number().optional(),
+  family_name: z.string().optional(),
+}).passthrough()
+
+export const mfdataSectorsResponseSchema = mfdataWrapperSchema(mfdataSectorsDataSchema)
+
+export type MfdataSectorEntry = z.infer<typeof mfdataSectorEntrySchema>
+
 export const schemeDetailResponseSchema = z.unknown().transform((raw): SchemeDetail | null => {
   if (typeof raw !== 'object' || raw === null) return null
   const obj = raw as Record<string, unknown>
-  const holdingsRaw = Array.isArray(obj.portfolio_holdings ?? obj.portfolioHoldings)
-    ? (obj.portfolio_holdings ?? obj.portfolioHoldings).map((h: Record<string, unknown>) => ({
-        name: h.name ?? h.security ?? '',
-        amountCr: Number(h.amount_cr ?? h.amountCr ?? 0),
-        percentage: Number(h.percentage ?? h.percent ?? 0),
-      }))
-    : []
-  const sectorsRaw = Array.isArray(obj.sector_allocation ?? obj.sectorAllocation)
-    ? (obj.sector_allocation ?? obj.sectorAllocation).map((s: Record<string, unknown>) => ({
-        sector: s.sector ?? '',
-        percentage: Number(s.percentage ?? 0),
-      }))
-    : []
-  const returnsRaw = Array.isArray(obj.rolling_returns ?? obj.rollingReturns)
-    ? (obj.rolling_returns ?? obj.rollingReturns).map((r: Record<string, unknown>) => ({
-        period: r.period ?? '',
-        fund: Number(r.fund ?? 0),
-        benchmark: Number(r.benchmark ?? r.bm ?? 0),
-      }))
-    : []
+  const meta = obj.meta as Record<string, unknown> | undefined
+
+  if (!meta || !meta.scheme_code) return null
+
+  const schemeCode = String(meta.scheme_code)
+  const rawCategory = String(meta.scheme_category ?? meta.category ?? '')
+  const { category, subCategory } = parseCategory(rawCategory)
+
   return schemeDetailSchema.parse({
-    schemeCode: String(obj.scheme_code ?? obj.schemeCode ?? ''),
-    schemeName: String(obj.scheme_name ?? obj.schemeName ?? ''),
-    amc: String(obj.amc ?? ''),
-    category: String(obj.category ?? obj.super_category ?? ''),
-    subCategory: String(obj.sub_category ?? obj.subCategory ?? ''),
-    plan: String(obj.plan ?? ''),
-    option: String(obj.option ?? ''),
-    expenseRatio: Number(obj.expense_ratio ?? obj.expenseRatio ?? 0),
-    aum: Number(obj.aum ?? 0),
-    riskLabel: String(obj.risk_label ?? obj.riskLabel ?? ''),
-    benchmark: String(obj.benchmark ?? ''),
-    exitLoad: (() => {
-      const raw = obj.exit_load ?? obj.exitLoad
-      if (raw && typeof raw === 'object') return raw
-      return { exists: false }
-    })(),
-    portfolioHoldings: holdingsRaw.filter((h: PortfolioHolding) => h.name),
-    sectorAllocation: sectorsRaw.filter((s: SectorAllocation) => s.sector),
-    rollingReturns: returnsRaw.filter((r: RollingReturn) => r.period),
+    schemeCode,
+    schemeName: String(meta.scheme_name ?? ''),
+    amc: String(meta.fund_house ?? ''),
+    category,
+    subCategory,
+    plan: '',
+    option: '',
+    expenseRatio: 0,
+    aum: 0,
+    riskLabel: '',
+    benchmark: '',
+    exitLoad: { exists: false },
+    portfolioHoldings: [],
+    sectorAllocation: [],
+    rollingReturns: [],
   })
 })

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from '@tanstack/react-router'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { MoreHorizontal, Pencil, XCircle, Target, ArrowLeft } from 'lucide-react'
+import { MoreHorizontal, Pencil, XCircle, Target, ArrowLeft, BookOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -12,8 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader,
-  DialogTitle, DialogTrigger,
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
 import { db } from '@/stores/db'
 import { useGoals } from '@/features/goals'
@@ -88,7 +87,7 @@ export default function GoalDetail() {
   const progressPercent = Math.min(progress, 1)
 
   async function handleClose() {
-    if (goal.id == null || isNaN(goal.id)) return
+    if (!goal || goal.id == null || isNaN(goal.id)) return
     setClosing(true)
     try {
       await closeGoal(goal.id)
@@ -157,6 +156,10 @@ export default function GoalDetail() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => navigate({ to: `/journal?goalId=${goal.id}` })}>
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  Journal
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowEdit(true)}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit

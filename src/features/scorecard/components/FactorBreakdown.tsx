@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronUp, Loader2, Sparkles } from 'lucide-react'
 import { TermInfo } from '@/components/features/TermInfo'
 import type { ScoringFactor } from '@/types/scorecard'
 
@@ -13,6 +13,19 @@ const FACTOR_SLUGS: Record<string, string> = {
   drawdown: 'nav',
   exitLoad: 'exit-load',
   overlap: 'nav',
+  sharpeRatio: 'nav',
+  sortinoRatio: 'nav',
+  alpha: 'nav',
+  beta: 'nav',
+  rSquared: 'nav',
+  informationRatio: 'nav',
+  upCapture: 'nav',
+  downCapture: 'nav',
+  trailing1YReturn: 'nav',
+  trailing3YReturn: 'nav',
+  trailing5YReturn: 'nav',
+  sinceInceptionReturn: 'nav',
+  yearwiseConsistency: 'nav',
 }
 
 function contributionColor(value: number): string {
@@ -39,16 +52,22 @@ interface FactorBreakdownProps {
   factors: ScoringFactor[]
   open: boolean
   onToggle: () => void
+  isLoading?: boolean
+  isEnriched?: boolean
 }
 
-export function FactorBreakdown({ factors, open, onToggle }: FactorBreakdownProps) {
+export function FactorBreakdown({ factors, open, onToggle, isLoading, isEnriched }: FactorBreakdownProps) {
   return (
     <div className="border-t">
       <button
         onClick={onToggle}
         className="flex w-full items-center justify-between px-4 py-2 text-small text-muted-foreground hover:text-foreground"
       >
-        <span>Factor Breakdown</span>
+        <span className="flex items-center gap-2">
+          Factor Breakdown
+          {isLoading && <Loader2 className="h-3 w-3 animate-spin" />}
+          {isEnriched && <Sparkles className="h-3 w-3 text-green-500" />}
+        </span>
         {open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
       </button>
       {open && (

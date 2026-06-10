@@ -10,6 +10,7 @@ const TABLE_NAMES = [
   'riskProfiles',
   'glossary',
   'goalHoldings',
+  'reviewSettings',
 ] as const
 
 type TableName = (typeof TABLE_NAMES)[number]
@@ -81,7 +82,7 @@ export function useDataExport() {
     }
 
     try {
-      await db.transaction('rw', ...tableNames.map(n => (db as any)[n]), async () => {
+      await db.transaction('rw', [...tableNames.map(n => (db as any)[n])] as any, async () => {
         for (const name of tableNames) {
           const table = (db as any)[name]
           await table.clear()

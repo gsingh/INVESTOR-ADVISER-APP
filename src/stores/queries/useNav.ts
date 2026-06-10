@@ -7,7 +7,7 @@ export function useNav(schemeCode: string) {
   return useQuery({
     queryKey: ['nav', schemeCode],
     queryFn: async ({ signal }) => {
-      const res = await fetch(`${API_BASE}/nav/${schemeCode}`, { signal })
+      const res = await fetch(`${API_BASE}/mf/${schemeCode}`, { signal })
       if (!res.ok) throw new Error(`API error: ${res.status}`)
       const data = await res.json()
       return navHistoryResponseSchema.parse(data)

@@ -5,6 +5,7 @@ import type { MFFund } from '@/types/api'
 interface FundRowProps {
   fund: MFFund
   onClick: () => void
+  score?: number
 }
 
 const riskColors: Record<string, string> = {
@@ -17,7 +18,7 @@ const riskColors: Record<string, string> = {
   VeryHigh: 'bg-red-100 text-red-800',
 }
 
-export function FundRow({ fund, onClick }: FundRowProps) {
+export function FundRow({ fund, onClick, score }: FundRowProps) {
 
   return (
     <div
@@ -53,7 +54,7 @@ export function FundRow({ fund, onClick }: FundRowProps) {
         </div>
       </div>
 
-      <div className="hidden shrink-0 text-right sm:block">
+      <div className="shrink-0 text-right">
         <p className="text-sm text-muted-foreground">
           ER: {fund.expenseRatio > 0 ? formatPercentage(fund.expenseRatio / 100) : '—'}
         </p>
@@ -64,7 +65,7 @@ export function FundRow({ fund, onClick }: FundRowProps) {
 
       <div className="shrink-0 text-right">
         <p className="text-sm text-muted-foreground">Score</p>
-        <p className="text-sm font-semibold">—</p>
+        <p className="text-sm font-semibold">{score !== undefined ? score.toFixed(1) : '—'}</p>
       </div>
     </div>
   )

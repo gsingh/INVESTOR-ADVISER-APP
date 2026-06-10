@@ -1,21 +1,33 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/toast'
+import { Loader2, ArrowLeftRight, GitCompare } from 'lucide-react'
 import { FactorBreakdown } from './FactorBreakdown'
-import type { ScoredFund } from '../hooks/useScoredFunds'
+import { PeerPicker } from '@/features/compare/components/PeerPicker'
+import type { ScoredFund, EnrichedScoreResult } from '../hooks/useScoredFunds'
+import type { ScoringContext } from '@/types/scorecard'
+import type { ComputeScoreResult } from '@/types/scorecard'
 
 interface ScoredFundTableProps {
   scoredFunds: ScoredFund[]
   isLoading: boolean
   error: Error | null
   onRetry: () => void
+  enrichFund: (schemeCode: string, context?: ScoringContext) => Promise<EnrichedScoreResult | null>
+  isEnriching: (schemeCode: string) => boolean
+  enrichedScores: Record<string, EnrichedScoreResult>
 }
 
-export function ScoredFundTable({ scoredFunds, isLoading, error, onRetry }: ScoredFundTableProps) {
+export function ScoredFundTable({ scoredFunds, isLoading, error, onRetry, enrichFund, isEnriching, enrichedScores }: ScoredFundTableProps) {
+  const navigate = useNavigate()
   const [expandedCode, setExpandedCode] = useState<string | null>(null)
+  const [peerPickerFund, setPeerPickerFund] = useState<ScoredFund | null>(null)
   const { addToast } = useToast()
   const toastedErrorRef = useRef<string | null>(null)
+  const enrichedTriggeredRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     if (error && error.message !== toastedErrorRef.current) {
@@ -30,6 +42,13 @@ export function ScoredFundTable({ scoredFunds, isLoading, error, onRetry }: Scor
   const toggleExpand = useCallback((code: string) => {
     setExpandedCode(prev => prev === code ? null : code)
   }, [])
+
+  useEffect(() => {
+    if (expandedCode && !enrichedTriggeredRef.current.has(expandedCode) && !isEnriching(expandedCode)) {
+      enrichedTriggeredRef.current.add(expandedCode)
+      enrichFund(expandedCode)
+    }
+  }, [expandedCode, enrichFund, isEnriching])
 
   const handleRowKeyDown = useCallback((code: string, e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -77,6 +96,20 @@ export function ScoredFundTable({ scoredFunds, isLoading, error, onRetry }: Scor
 
   return (
     <div className="rounded-lg border">
+      <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-1.5">
+        <span className="text-small text-muted-foreground">
+          {scoredFunds.length} fund{scoredFunds.length !== 1 ? 's' : ''} scored
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate({ to: '/scorecard/compare' })}
+          className="h-7 text-xs"
+        >
+          <ArrowLeftRight className="mr-1 h-3.5 w-3.5" />
+          Compare Funds
+        </Button>
+      </div>
       <table className="w-full">
         <thead>
           <tr className="border-b bg-muted/50 text-left text-small text-muted-foreground">
@@ -84,6 +117,7 @@ export function ScoredFundTable({ scoredFunds, isLoading, error, onRetry }: Scor
             <th className="px-3 py-2 font-medium">Fund Name</th>
             <th className="w-24 px-3 py-2 font-medium">Category</th>
             <th className="w-20 px-3 py-2 text-right font-medium">Score</th>
+            <th className="w-16 px-3 py-2 text-center font-medium"></th>
           </tr>
         </thead>
         <tbody>
@@ -109,6 +143,27 @@ export function ScoredFundTable({ scoredFunds, isLoading, error, onRetry }: Scor
                 <span className="text-mono text-display-sm font-bold tabular-nums">
                   {item.score.compositeScore.toFixed(1)}
                 </span>
+                {enrichedScores[item.fund.schemeCode] && (
+                  <span className="ml-1 text-small text-green-600" title="Enriched score available">
+                    &#9679;
+                  </span>
+                )}
+                {isEnriching(item.fund.schemeCode) && (
+                  <Loader2 className="ml-1 inline-block h-3 w-3 animate-spin text-muted-foreground" />
+                )}
+              </td>
+              <td className="px-3 py-2.5 text-center">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setPeerPickerFund(item)
+                  }}
+                  className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                  title="Compare with category peers"
+                >
+                  <GitCompare className="h-3.5 w-3.5" />
+                </button>
               </td>
             </tr>
           ))}
@@ -117,16 +172,33 @@ export function ScoredFundTable({ scoredFunds, isLoading, error, onRetry }: Scor
 
       {scoredFunds.map(item => {
         if (expandedCode !== item.fund.schemeCode) return null
+        const enriched = enrichedScores[item.fund.schemeCode]
+        const isBusy = isEnriching(item.fund.schemeCode)
+        const displayScore: ComputeScoreResult = enriched?.enrichedScore ?? item.score
+        const isEnriched = !!enriched
+
         return (
           <div key={item.fund.schemeCode}>
             <FactorBreakdown
-              factors={item.score.factors}
+              factors={displayScore.factors}
               open={true}
               onToggle={() => setExpandedCode(null)}
+              isLoading={isBusy && !isEnriched}
+              isEnriched={isEnriched}
             />
           </div>
         )
       })}
+
+      {peerPickerFund && (
+        <PeerPicker
+          sourceFund={peerPickerFund.fund}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setPeerPickerFund(null)
+          }}
+        />
+      )}
     </div>
   )
 }

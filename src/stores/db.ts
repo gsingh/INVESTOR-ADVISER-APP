@@ -84,6 +84,46 @@ export interface GlossaryEntry {
   whyMatters: string
 }
 
+export interface ReviewSetting {
+  id?: number
+  frequency: 'monthly' | 'quarterly'
+  nextReviewDate: string
+  updatedAt: string
+}
+
+export interface ReviewStep {
+  name: 'drift_check' | 'category_exposure' | 'fund_role_fit' | 'benchmark_comparison' | 'rationale_outcome'
+  status: 'pass' | 'warn' | 'fail'
+  details: string
+}
+
+export interface Review {
+  id?: number
+  reviewDate: string
+  outcome: 'aligned' | 'action_taken'
+  rationale: string
+  steps: ReviewStep[]
+  createdAt: string
+}
+
+export interface MfdataCache {
+  schemeCode: string
+  sectors: Array<{ sector: string; percentage: number }>
+  cachedAt: number
+}
+
+export interface QuarterlySnapshot {
+  id?: number
+  holdingId: number
+  goalId: number
+  fundName: string
+  amfiCategory: string
+  currentValue: number
+  targetAllocation: number
+  quarter: string
+  snapshotDate: string
+}
+
 export class InvestorDB extends Dexie {
   goals!: Table<Goal>
   transactions!: Table<Transaction>
@@ -93,6 +133,10 @@ export class InvestorDB extends Dexie {
   riskProfiles!: Table<RiskProfile>
   glossary!: Table<GlossaryEntry>
   goalHoldings!: Table<GoalHolding>
+  reviewSettings!: Table<ReviewSetting>
+  reviews!: Table<Review>
+  quarterlySnapshots!: Table<QuarterlySnapshot>
+  mfdataCache!: Table<MfdataCache>
 
   constructor() {
     super('InvestorAdviserDB')
@@ -116,10 +160,78 @@ export class InvestorDB extends Dexie {
       glossary: '++id, slug',
       goalHoldings: '++id, goalId',
     })
+
+    this.version(3).stores({
+      goals: '++id, status',
+      transactions: '++id, schemeCode, date, goalId',
+      portfolios: '++id, schemeCode, goalId',
+      journals: '++id, goalId, reviewId, createdAt',
+      scorecardWeights: '++id, factor',
+      riskProfiles: '++id',
+      glossary: '++id, slug',
+      goalHoldings: '++id, goalId',
+      reviewSettings: '++id',
+    })
+
+    this.version(4).stores({
+      goals: '++id, status',
+      transactions: '++id, schemeCode, date, goalId',
+      portfolios: '++id, schemeCode, goalId',
+      journals: '++id, goalId, reviewId, createdAt',
+      scorecardWeights: '++id, factor',
+      riskProfiles: '++id',
+      glossary: '++id, slug',
+      goalHoldings: '++id, goalId',
+      reviewSettings: '++id',
+      reviews: '++id, reviewDate',
+    })
+
+    this.version(5).stores({
+      goals: '++id, status',
+      transactions: '++id, schemeCode, date, goalId',
+      portfolios: '++id, schemeCode, goalId',
+      journals: '++id, goalId, reviewId, createdAt',
+      scorecardWeights: '++id, factor',
+      riskProfiles: '++id',
+      glossary: '++id, slug',
+      goalHoldings: '++id, goalId',
+      reviewSettings: '++id',
+      reviews: '++id, reviewDate',
+      quarterlySnapshots: '++id, holdingId, quarter',
+    })
+
+    this.version(6).stores({
+      goals: '++id, status',
+      transactions: '++id, schemeCode, date, goalId',
+      portfolios: '++id, schemeCode, goalId',
+      journals: '++id, goalId, reviewId, createdAt',
+      scorecardWeights: '++id, factor',
+      riskProfiles: '++id',
+      glossary: '++id, slug',
+      goalHoldings: '++id, goalId',
+      reviewSettings: '++id',
+      reviews: '++id, reviewDate',
+      quarterlySnapshots: '++id, holdingId, quarter',
+      mfdataCache: '&schemeCode, cachedAt',
+    })
   }
 }
 
 let db: InvestorDB
+
+async function createDB(): Promise<InvestorDB> {
+  try {
+    const instance = new InvestorDB()
+    await instance.open()
+    return instance
+  } catch (e) {
+    console.warn('IndexedDB version mismatch — deleting and recreating database.', e)
+    await Dexie.delete('InvestorAdviserDB')
+    const instance = new InvestorDB()
+    await instance.open()
+    return instance
+  }
+}
 
 try {
   db = new InvestorDB()
@@ -130,4 +242,4 @@ try {
   )
 }
 
-export { db }
+export { db, createDB }

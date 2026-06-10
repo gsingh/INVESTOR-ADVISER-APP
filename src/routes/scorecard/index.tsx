@@ -5,7 +5,7 @@ import { ScoredFundTable } from '@/features/scorecard/components/ScoredFundTable
 
 export default function ScorecardPage() {
   const { weights, weightSum, updateWeight, resetToDefaults } = useScorecardWeights()
-  const { scoredFunds, isLoading, error, refetch } = useScoredFunds(weights)
+  const { scoredFunds, isLoading, error, refetch, enrichFund, isEnriching, enrichedScores } = useScoredFunds(weights)
 
   return (
     <div className="space-y-6">
@@ -29,6 +29,9 @@ export default function ScorecardPage() {
           isLoading={isLoading}
           error={error}
           onRetry={() => refetch()}
+          enrichFund={enrichFund}
+          isEnriching={isEnriching}
+          enrichedScores={enrichedScores}
         />
       </div>
     </div>

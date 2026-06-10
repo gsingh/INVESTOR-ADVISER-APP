@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useRef } from 'react'
-import { db, type Goal } from '@/stores/db'
+import { db } from '@/stores/db'
 import type { AmfiSuperCategory } from '@/lib/category-taxonomy'
 import { categoryTaxonomy } from '@/lib/category-taxonomy'
 

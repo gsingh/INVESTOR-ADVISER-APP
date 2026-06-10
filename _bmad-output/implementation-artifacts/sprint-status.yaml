@@ -32,6 +32,7 @@
 
 generated: 2026-06-03
 last_updated: 2026-06-04
+# 5-2-review-checklist-flow code review completed — all patches applied, set to done
 # 4-3-holdings-dashboard-data-export-import done (ready for review)
 # 4-2-transaction-logging ready-for-dev
 # 4-1-xirr-engine-pure-function: code review patches applied
@@ -69,8 +70,8 @@ development_status:
   4-3-holdings-dashboard-data-export-import: done
   epic-4-retrospective: optional
 
-  epic-5: backlog
-  5-1-review-schedule-reminder-system: backlog
-  5-2-review-checklist-flow: backlog
-  5-3-investment-journal: backlog
+  epic-5: done
+  5-1-review-schedule-reminder-system: done
+   5-2-review-checklist-flow: done
+  5-3-investment-journal: done
   epic-5-retrospective: optional

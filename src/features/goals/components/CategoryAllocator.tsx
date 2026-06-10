@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { TermInfo } from '@/components/features/TermInfo'
 import { useCategoryMapping } from '../hooks/useCategoryMapping'
-import { categoryTaxonomy, type AmfiSuperCategory } from '@/lib/category-taxonomy'
+import { categoryTaxonomy } from '@/lib/category-taxonomy'
 
 interface CategoryAllocatorProps {
   goalId: number

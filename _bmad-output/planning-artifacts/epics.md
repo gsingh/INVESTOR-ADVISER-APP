@@ -287,7 +287,7 @@ So that I know where to invest and how much to set aside.
 
 **Given** I open the SIP Calculator on the Goal Detail page,
 **When** I enter target amount, target date, starting amount, expected inflation, and monthly contribution,
-**Then** the calculator shows the required monthly SIP under 3 return scenarios (conservative 6%, moderate 8%, optimistic 10%).
+**Then** the calculator shows the required monthly SIP under 3 retur1n scenarios (conservative 6%, moderate 8%, optimistic 10%).
 
 **Given** the SIP Calculator has computed results,
 **When** I view the chart,

@@ -10,8 +10,10 @@ const GoalDetail = lazy(() => import('./routes/goals/$goalId'))
 const UniverseBrowser = lazy(() => import('./routes/universe-browser/index'))
 const Scorecard = lazy(() => import('./routes/scorecard/index'))
 const FundDetail = lazy(() => import('./routes/scorecard/$schemeCode'))
+const FundCompare = lazy(() => import('./routes/scorecard/compare'))
 const Portfolio = lazy(() => import('./routes/portfolio/index'))
 const Reviews = lazy(() => import('./routes/reviews/index'))
+const ReviewsChecklist = lazy(() => import('./routes/reviews/checklist'))
 const Journal = lazy(() => import('./routes/journal/index'))
 const Settings = lazy(() => import('./routes/settings/index'))
 
@@ -54,13 +56,24 @@ const universeBrowserRoute = createRoute({
 const scorecardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/scorecard',
+})
+
+const scorecardIndexRoute = createRoute({
+  getParentRoute: () => scorecardRoute,
+  path: '/',
   component: Scorecard,
 })
 
 const fundDetailRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/scorecard/$schemeCode',
+  getParentRoute: () => scorecardRoute,
+  path: '$schemeCode',
   component: FundDetail,
+})
+
+const fundCompareRoute = createRoute({
+  getParentRoute: () => scorecardRoute,
+  path: 'compare',
+  component: FundCompare,
 })
 
 const portfolioRoute = createRoute({
@@ -72,7 +85,18 @@ const portfolioRoute = createRoute({
 const reviewsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/reviews',
+})
+
+const reviewsIndexRoute = createRoute({
+  getParentRoute: () => reviewsRoute,
+  path: '/',
   component: Reviews,
+})
+
+const reviewsChecklistRoute = createRoute({
+  getParentRoute: () => reviewsRoute,
+  path: 'checklist',
+  component: ReviewsChecklist,
 })
 
 const journalRoute = createRoute({
@@ -94,10 +118,9 @@ export const routeTree = rootRoute.addChildren([
   newGoalRoute,
   goalDetailRoute,
   universeBrowserRoute,
-  scorecardRoute,
-  fundDetailRoute,
+  scorecardRoute.addChildren([scorecardIndexRoute, fundDetailRoute, fundCompareRoute]),
   portfolioRoute,
-  reviewsRoute,
+  reviewsRoute.addChildren([reviewsIndexRoute, reviewsChecklistRoute]),
   journalRoute,
   settingsRoute,
 ])

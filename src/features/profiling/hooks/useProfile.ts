@@ -37,6 +37,7 @@ interface UseProfileReturn {
 
 export function useProfile(): UseProfileReturn {
   const profile = useLiveQuery(() => db.riskProfiles.orderBy('id').last())
+  const count = useLiveQuery(() => db.riskProfiles.count())
 
   const saveProfile = useCallback(async (answers: Answer[], monthlyCapacity: number, timeHorizon: number) => {
     const result = computeRiskProfile(answers)
@@ -55,7 +56,7 @@ export function useProfile(): UseProfileReturn {
 
   return {
     profile,
-    loading: profile === undefined,
+    loading: count === undefined,
     saveProfile,
     retakeProfile,
   }

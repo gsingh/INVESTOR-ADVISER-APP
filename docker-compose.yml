@@ -3,5 +3,7 @@ services:
     build: .
     ports:
       - "80:80"
+    environment:
+      - GETMFDATA_API_KEY=${GETMFDATA_API_KEY}
     volumes:
       - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro

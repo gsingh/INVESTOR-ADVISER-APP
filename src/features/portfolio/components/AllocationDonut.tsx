@@ -14,12 +14,6 @@ interface AllocationDonutProps {
   totalValue: number
 }
 
-interface Payload {
-  name: string
-  value: number
-  payload: { category: string; value: number; percentage: number }
-}
-
 export function AllocationDonut({ data, loading, totalValue }: AllocationDonutProps) {
   const id = useId()
 
@@ -62,9 +56,9 @@ export function AllocationDonut({ data, loading, totalValue }: AllocationDonutPr
           ))}
         </Pie>
         <Tooltip
-          formatter={(value: number, _name: string, entry: { payload: Payload['payload'] }) => [
+          formatter={(value: number, _name: string) => [
             formatINR(value),
-            entry.payload.category,
+            '',
           ]}
         />
         <Legend

@@ -58,3 +58,14 @@
 ## Deferred from: code review of 4-2-transaction-logging (2026-06-04)
 
 - No future-date validation on transaction date — `validateDate()` only checks `!date`. Future dates pass. `max` HTML attribute provides browser guard. Not in ACs. (`AddTransactionForm.tsx:178`)
+
+## Deferred from: code review of 5-2-review-checklist-flow (2026-06-04)
+
+- Hardcoded BENCHMARK_RATES going stale — Static rates in code; requires API or config source for dynamic updates. MVP limitation. (`useReviewSteps.ts`)
+- 6 useLiveQuery calls across useReviewSteps + useAlertsState — Performance optimization; each fires on every write to observed tables. (`useReviewSteps.ts`, `useAlertsState.ts`)
+- sessionStorage dismissed alerts cleared on tab close — Intentional design: alerts reappear per session for a single-user SPA. (`useAlertsState.ts`)
+- AC #4: "drift indicators reset" — no explicit drift state to reset in current architecture
+
+## Deferred from: code review of 5-3-investment-journal (2026-06-04)
+
+- Stale select options after external data change — If a goal or review is deleted while JournalEditor is open, the selected value no longer exists in the dropdown. Unlikely in single-user MVP. (`JournalEditor.tsx:111-128`)

@@ -31,15 +31,15 @@ export function usePortfolio(): PortfolioSummary {
   const navQueries = useQueries({
     queries: schemeCodes.map(code => ({
       queryKey: ['nav', code],
-      queryFn: async ({ signal }) => {
-        const res = await fetch(`${API_BASE}/nav/${code}`, { signal })
+      queryFn: async ({ signal }: { signal: AbortSignal }) => {
+        const res = await fetch(`${API_BASE}/mf/${code}`, { signal })
         if (!res.ok) throw new Error(`API error: ${res.status}`)
         const data = await res.json()
         return navHistoryResponseSchema.parse(data)
       },
       staleTime: 30 * 60 * 1000,
       retry: 3,
-      retryDelay: attempt => Math.min(1000 * 2 ** attempt, 10000),
+      retryDelay: (attempt: number) => Math.min(1000 * 2 ** attempt, 10000),
     })),
   })
 

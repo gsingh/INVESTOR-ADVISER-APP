@@ -22,6 +22,7 @@ const pageTitles: Record<string, string> = {
 function getPageTitle(pathname: string): string {
   if (pageTitles[pathname]) return pageTitles[pathname]
   if (pathname.startsWith('/goals/')) return 'Goal Detail'
+  if (pathname.startsWith('/scorecard/compare')) return 'Compare Funds'
   if (pathname.startsWith('/scorecard/')) return 'Fund Detail'
   return 'Investor Adviser'
 }

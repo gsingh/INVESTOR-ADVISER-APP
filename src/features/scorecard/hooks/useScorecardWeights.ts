@@ -4,40 +4,53 @@ import { db } from '@/stores/db'
 import type { ScorecardWeights } from '@/types/scorecard'
 
 const DEFAULT_WEIGHTS: ScorecardWeights = {
-  consistency: 30,
-  cost: 15,
-  categoryFit: 15,
-  benchmarkSuitability: 10,
-  fundAge: 5,
-  aumSanity: 5,
-  volatility: 5,
-  drawdown: 5,
-  exitLoad: 5,
-  overlap: 5,
+  consistency: 10,
+  cost: 8,
+  sharpeRatio: 8,
+  trailing3YReturn: 8,
+  categoryFit: 5,
+  sortinoRatio: 5,
+  alpha: 5,
+  yearwiseConsistency: 5,
+  trailing1YReturn: 4,
+  trailing5YReturn: 4,
+  benchmarkSuitability: 4,
+  volatility: 4,
+  drawdown: 4,
+  informationRatio: 4,
+  fundAge: 3,
+  aumSanity: 3,
+  exitLoad: 3,
+  overlap: 3,
+  upCapture: 3,
+  downCapture: 3,
+  beta: 2,
+  rSquared: 2,
+  sinceInceptionReturn: 2,
 }
 
-const FACTOR_KEYS = Object.keys(DEFAULT_WEIGHTS) as (keyof ScorecardWeights)[]
-
-function dbWeightsToObject(): Promise<ScorecardWeights | null> {
+function dbWeightsToObject(): Promise<ScorecardWeights> {
   return db.scorecardWeights.toArray().then(rows => {
-    if (!rows.length) return null
-    const result: Record<string, number> = {}
+    const result = { ...DEFAULT_WEIGHTS }
     for (const row of rows) {
       if (row.factor in DEFAULT_WEIGHTS) {
-        result[row.factor] = row.weight
+        result[row.factor as keyof ScorecardWeights] = row.weight as number
       }
     }
-    return result as ScorecardWeights
+    return result
   })
 }
 
 export function useScorecardWeights() {
-  const weightsFromDb = useLiveQuery(dbWeightsToObject, [], null)
+  const weightsFromDb = useLiveQuery(dbWeightsToObject, [], undefined)
   const [weights, setWeights] = useState<ScorecardWeights>(DEFAULT_WEIGHTS)
-  const timerRef = useRef<ReturnType<typeof setTimeout>>()
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const pendingRef = useRef<Partial<ScorecardWeights>>({})
+  const loadedRef = useRef(false)
 
   useEffect(() => {
-    if (weightsFromDb) {
+    if (weightsFromDb && !loadedRef.current) {
+      loadedRef.current = true
       setWeights(weightsFromDb)
     }
   }, [weightsFromDb])
@@ -47,25 +60,25 @@ export function useScorecardWeights() {
   }, [])
 
   const updateWeight = useCallback((key: keyof ScorecardWeights, value: number) => {
-    setWeights(prev => {
-      const next = { ...prev, [key]: value }
-      clearTimeout(timerRef.current)
-      timerRef.current = setTimeout(async () => {
-        for (const [k, v] of Object.entries(next)) {
-          const existing = await db.scorecardWeights.where('factor').equals(k).first()
-          if (existing) {
-            await db.scorecardWeights.put({ ...existing, weight: v as number })
-          } else {
-            await db.scorecardWeights.put({ factor: k, weight: v as number })
-          }
+    setWeights(prev => ({ ...prev, [key]: value }))
+
+    pendingRef.current[key] = value
+
+    clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(async () => {
+      const batch = pendingRef.current
+      pendingRef.current = {}
+      await db.transaction('rw', db.scorecardWeights, async () => {
+        for (const [k, v] of Object.entries(batch)) {
+          await db.scorecardWeights.put({ factor: k, weight: v as number })
         }
-      }, 500)
-      return next
-    })
+      })
+    }, 500)
   }, [])
 
   const resetToDefaults = useCallback(() => {
     setWeights(DEFAULT_WEIGHTS)
+    pendingRef.current = {}
     clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => {
       db.scorecardWeights.clear()
